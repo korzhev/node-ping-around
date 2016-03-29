@@ -1,0 +1,13 @@
+{
+  "name": "application-name",
+  "version": "0.0.1",
+  "dependencies": {
+    "net-ping": "^1.2.0"
+  },
+  "devDependencies": {
+    "babel-eslint": "^6.0.0",
+    "eslint": "^2.5.1",
+    "eslint-config-airbnb": "^6.2.0",
+    "eslint-plugin-react": "^4.2.3"
+  }
+}
