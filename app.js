@@ -30,7 +30,7 @@ let nextHost = 0;
 //        pingThisShit(index);
 //    });
 //}
-console.time('ping');
+//console.time('ping');
 
 function startThisShit(index) {
     //let socketIndex = index === 5 ? 0 : index;
