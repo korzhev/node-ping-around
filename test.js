@@ -4,6 +4,7 @@ const ping = require('net-ping');
 const options = {networkProtocol: ping.NetworkProtocol.IPv4, retries: 1, timeout: 2000};
 const hostList = [
   "10.76.100.240",
+  "10.44.9.116",
   "10.44.9.1"
 ];
 const socketPoolSize = 5;

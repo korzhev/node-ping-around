@@ -1,5 +1,6 @@
 const pingAround = require('./index');
-const hostList = require('./host_list');
+//const hostList = require('./host_list');
+const hostList = require('./dev_list');
 
 var ping = require('net-ping');
 const options = {
@@ -8,6 +9,6 @@ const options = {
   timeout: 1000
 };
 
-const P = new pingAround(hostList, 5, options);
-P.on('error', console.log)
-P.start();
+const P1 = new pingAround(hostList, 10, options);
+P1.on('error', ()=>{})
+P1.start();

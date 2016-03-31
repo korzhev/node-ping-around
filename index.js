@@ -11,6 +11,7 @@ function PingAround(ipList, socketPoolSize, socketOptions) {
   };
   this._startTimeout = null;
   this._socketPool = [];
+  this._ipActive = [];
   this._socketNumber = 0;
   this._startIteration = 0;
   this._nextHost = 0;
@@ -26,7 +27,7 @@ util.inherits(PingAround, EE);
 
 PingAround.prototype.start = function() {
   if (this.ipList.length < this.socketPoolSize)
-    this._startTimeout = setTimeout(function() {this.start()}.bind(this), 5000);
+    return this._startTimeout = setTimeout(function() {this.start()}.bind(this), 5000);
 
   while (this._startIteration < this._socketPool.length) {
     this._ping(this._startIteration++);
@@ -38,27 +39,41 @@ PingAround.prototype.stop = function() {
   this.emit('stop');
   clearTimeout(this._startTimeout);
 };
-
+console.time('1');
 PingAround.prototype._ping = function(index) {
+  var mr = Math.floor(Math.random() * 1000);
   if (this._nextHost >= this.ipList.length) {
+    return console.timeEnd('1');
     this._nextHost = 0;
   }
+
+  if (~this._ipActive.indexOf(this.ipList[this._nextHost])) {
+    this._nextHost++;
+    this._ping(index);
+    return;
+  }
+
+  this._ipActive.push(this.ipList[this._nextHost]);
   this._socketPool[index].pingHost(this.ipList[this._nextHost], (err, host, sent, rcvd) => {
-    //console.log(nextHost, '->', err, host, rcvd - sent, 'ms');
     if (err) {
-      //console.log('>>', err, host, index, this._nextHost);
+      console.log(index, '>>', err, host, mr);
       this.emit('error', err, host);
     } else {
       var ms = rcvd - sent;
       if (ms >= this._socketOptions.timeout) {
+        this._disableIp(host);
+        this._nextHost++;
+        this._ping(index);
         return;
       }
-      console.log(index, '->', host, ms);
+      console.log('socket №', index, '->', host, ms + 'ms');
       this.emit('data', ms, host);
     }
+    this._disableIp(host);
     this._nextHost++;
     this._ping(index);
   });
+
 };
 
 PingAround.prototype.addHost = function(ip) {
@@ -67,15 +82,20 @@ PingAround.prototype.addHost = function(ip) {
   return this.ipList;
 };
 
+PingAround.prototype._disableIp = function(ip) {
+  var index = this._ipActive.indexOf(ip);
+  if (~index) this._ipActive.splice(index, 1);
+};
+
 PingAround.prototype.removeHost = function(ip) {
   if (Array.isArray(ip)) {
     ip.forEach(function(item) {
       var index = this.ipList.indexOf(item);
-      if (~index) this.ipList = this.ipList.slice(index, 1);
+      if (~index) this.ipList = this.ipList.splice(index, 1);
     });
   } else {
     var index = this.ipList.indexOf(ip);
-    if (~index) this.ipList = this.ipList.slice(index, 1);
+    if (~index) this.ipList.splice(index, 1);
   }
   return this.ipList;
 };
