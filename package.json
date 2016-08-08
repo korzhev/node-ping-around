@@ -1,5 +1,5 @@
 {
-  "name": "application-name",
+  "name": "ping-around",
   "version": "0.0.1",
   "dependencies": {
     "net-ping": "^1.2.0"

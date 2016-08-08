@@ -2,13 +2,16 @@ var util = require('util');
 var EE = require('events').EventEmitter;
 var ping = require('net-ping');
 
-function PingAround(ipList, options) {
-  this._errorRetention = options.errorRetention || 10000;
+function PingAround(ipList, options, sessionIdSalt) {
   this.ipList = ipList;
-  this._socketOptions = options.socketOptions || {
-    networkProtocol: ping.NetworkProtocol.IPv4,
-    retries: 1,
-    timeout: 1000
+  var sockOptions = options.socketOptions || {};
+  this._socketOptions = {
+    networkProtocol: sockOptions.networkProtocol === 'IPv6' ?
+        ping.NetworkProtocol.IPv6
+      :
+        ping.NetworkProtocol.IPv4,
+    retries: sockOptions.retries || 1,
+    timeout: sockOptions.timeout || 1000
   };
   this._startTimeout = null;
   this._socketPool = [];
@@ -16,9 +19,11 @@ function PingAround(ipList, options) {
   this._socketNumber = 0;
   this._startIteration = 0;
   this._currentHostIndex = 0;
-  this._socketPoolSize = options.socketPoolSize || 10;
+  this._socketPoolSize = options.socketPoolSize || 2;
   while (this._socketNumber++ < this._socketPoolSize) {
-    this._socketOptions.sessionId = (process.pid % 65535) + this._socketNumber;
+    this._socketOptions.sessionId = (process.pid % 65535)
+      + this._socketNumber
+      + (sessionIdSalt || 0);
     this._socketPool.push(ping.createSession(this._socketOptions));
   }
 }
@@ -27,12 +32,12 @@ util.inherits(PingAround, EE);
 
 PingAround.prototype.start = function paStart() {
   var self = this;
-  if (this.ipList.length < this._socketPoolSize) {
-    this._startTimeout = setTimeout(self.start, 5000);
+  if (self.ipList.length < self._socketPoolSize) {
+    self._startTimeout = setTimeout(function() { self.start(); }, 5000);
     return this;
   }
-  while (this._startIteration < this._socketPool.length) {
-    this._ping(this._startIteration++);
+  while (self._startIteration < self._socketPool.length) {
+    self._ping(self._startIteration++);
   }
   this.emit('start');
   return this;
@@ -50,13 +55,6 @@ PingAround.prototype._ping = function paPing(index) {
     this._currentHostIndex = 0;
   }
   var hostIndex = this._currentHostIndex;
-  // console.log(this.ipList[hostIndex].retention > Date.now(), this.ipList[hostIndex].retention , Date.now(), hostIndex)
-  //if (this.ipList[hostIndex].retention > Date.now()) {
-  //    //console.log('fuuu')
-  //  this._currentHostIndex++;
-  //  this._ping(index);
-  //  return;
-  //}
   if (~this._ipActive.indexOf(this.ipList[hostIndex])) {
     this._currentHostIndex++;
     this._ping(index);
@@ -68,14 +66,8 @@ PingAround.prototype._ping = function paPing(index) {
     this.ipList[hostIndex],
     function pingHostCb(err, host, sent, rcvd) {
       if (err) {
-
-        //self.ipList[hostIndex].retention = Date.now() + self._errorRetention;
         //console.log(self.ipList[hostIndex].retention, hostIndex)
-        console.log(index, '>>', err, host, mr);
-
-        // TODO
-        self.removeHost(host);
-
+        //console.log(index, '>>', err, host, mr);
         self.emit('error', err, host);
       } else {
         ms = rcvd - sent;
@@ -85,7 +77,7 @@ PingAround.prototype._ping = function paPing(index) {
           self._ping(index);
           return;
         }
-        console.log('socket №', index, '-> host № ', hostIndex, host, ms + 'ms');
+        //console.log('socket №', index, '-> host № ', hostIndex, host, ms + 'ms');
         self.emit('data', ms, host);
       }
       self._disableIp(host);
