@@ -2,14 +2,11 @@ var util = require('util');
 var EE = require('events').EventEmitter;
 var ping = require('net-ping');
 
-function PingAround(ipList, options, sessionIdSalt) {
+function PingAround(ipList, options) {
   this.ipList = ipList;
   var sockOptions = options.socketOptions || {};
   this._socketOptions = {
-    networkProtocol: sockOptions.networkProtocol === 'IPv6' ?
-        ping.NetworkProtocol.IPv6
-      :
-        ping.NetworkProtocol.IPv4,
+    networkProtocol: ping.NetworkProtocol[sockOptions.networkProtocol || 'IPv6'],
     retries: sockOptions.retries || 1,
     timeout: sockOptions.timeout || 1000
   };
@@ -23,7 +20,7 @@ function PingAround(ipList, options, sessionIdSalt) {
   while (this._socketNumber++ < this._socketPoolSize) {
     this._socketOptions.sessionId = (process.pid % 65535)
       + this._socketNumber
-      + (sessionIdSalt || 0);
+      + (options.sessionIdSalt || 0);
     this._socketPool.push(ping.createSession(this._socketOptions));
   }
 }
@@ -48,7 +45,7 @@ PingAround.prototype.stop = function paStop() {
   clearTimeout(this._startTimeout);
 };
 PingAround.prototype._ping = function paPing(index) {
-  var mr = Math.floor(Math.random() * 1000);
+  //var mr = Math.floor(Math.random() * 1000);
   var ms = 0;
   var self = this;
   if (this._currentHostIndex >= this.ipList.length) {
