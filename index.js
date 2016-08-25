@@ -3,9 +3,9 @@ var EE = require('events').EventEmitter;
 var ping = require('net-ping');
 
 function PingAround(ipList, options) {
-  this.ipList = ipList;
   var sockOptions = options.socketOptions || {};
-  this.isActive = false;
+  this.ipList = ipList;
+  this.active = false;
   this._socketOptions = {
     networkProtocol: ping.NetworkProtocol[sockOptions.networkProtocol || 'IPv6'],
     retries: sockOptions.retries || 1,
@@ -24,23 +24,20 @@ function PingAround(ipList, options) {
       + (options.sessionIdSalt || 0);
     this._socketPool.push(ping.createSession(this._socketOptions));
   }
-
-  this.start = this.start.bind(this);
-
 }
 
 util.inherits(PingAround, EE);
 
 PingAround.prototype.start = function paStart() {
-  //var self = this;
+  var self = this;
   if (this.ipList.length < this._socketPoolSize) {
-    this._startTimeout = setTimeout(this.start, 5000);
+    this._startTimeout = setTimeout(function () { self.start(); }, 5000);
     return this;
   }
+  this.isActive = true;
   while (this._startIteration < this._socketPool.length) {
     this._ping(this._startIteration++);
   }
-  this.isActive = true;
   this.emit('start');
   return this;
 };
