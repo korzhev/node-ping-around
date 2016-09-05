@@ -7,7 +7,7 @@ function PingAround(ipList, options) {
   this.ipList = ipList;
   this.active = false;
   this._socketOptions = {
-    networkProtocol: ping.NetworkProtocol[sockOptions.networkProtocol || 'IPv6'],
+    networkProtocol: ping.NetworkProtocol[sockOptions.networkProtocol || 'IPv4'],
     retries: sockOptions.retries || 1,
     timeout: sockOptions.timeout || 1000
   };

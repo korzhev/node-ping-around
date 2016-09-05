@@ -1,6 +1,6 @@
 {
   "name": "ping-around",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "dependencies": {
     "net-ping": "^1.2.0"
   },

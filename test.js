@@ -1,6 +1,6 @@
 var pingAround = require('./index');
-//const hostList = require('./host_list');
-var hostList = require('./dev_list');
+const hostList = require('./host_list');
+//var hostList = require('./dev_list');
 
 var ping = require('net-ping');
 
